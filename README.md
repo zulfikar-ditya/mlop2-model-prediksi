@@ -34,3 +34,20 @@ pip install -r requirements.txt
 ```
 1. Unduh `Base.csv` dari [Kaggle BAF](https://www.kaggle.com/datasets/sgpjesus/bank-account-fraud-dataset-neurips-2022) ke `data/Base.csv`. Folder `data/` tidak di-commit karena ukurannya besar.
 2. Jalankan `notebooks/kasus_a_fraud.ipynb` dari atas ke bawah (~1 menit). Notebook menyimpan model ke `models/`, lalu memuatnya ulang untuk memastikan hasilnya sama.
+
+## Verifikasi inferensi .joblib
+Input: 29 fitur model (dari `--input` JSON atau sampel bulan 3 `Base.csv`). Output bisa diatur lewat `--threshold` dan `--fields`.
+```bash
+python scripts/verify_inference.py --rows 6
+python scripts/verify_inference.py --input samples/request.json --threshold 0.5 --fields fraud_score,is_fraud
+```
+
+## Backend service
+FastAPI, endpoint `POST /predict`, dilindungi header `x-api-key` (nilai dari env `API_KEY`, contoh di `.env.example`).
+- Parameter: 29 fitur. Wajib semua, kecuali `prev_address_months_count`, `current_address_months_count`, `bank_months_count`, `session_length_in_minutes`, `device_distinct_emails_8w` yang opsional dan default `-1` (penanda nilai kosong di dataset BAF).
+- Response: `model_name`, `model_version` (12 karakter awal SHA-256 file model), `fraud_score`, `is_fraud`, `threshold`. Bisa diatur lewat query `?threshold=0.5` dan `?fields=fraud_score,is_fraud`.
+```bash
+API_KEY=change-me uvicorn app.main:app --reload
+curl -X POST localhost:8000/predict -H "x-api-key: change-me" -H "Content-Type: application/json" -d @samples/request.json
+pytest
+```
