@@ -1,0 +1,25 @@
+[Unit]
+Description=Account Opening Fraud API
+After=network.target
+
+[Service]
+User=fraudapi
+Group=fraudapi
+WorkingDirectory=/opt/fraud-api
+EnvironmentFile=/etc/fraud-api/env
+Environment=PYTHONDONTWRITEBYTECODE=1
+ExecStart=/opt/fraud-api/.venv/bin/uvicorn app.main:app --host 127.0.0.1 --port 8000 --workers 2 --proxy-headers --forwarded-allow-ips 127.0.0.1 --no-server-header
+Restart=on-failure
+RestartSec=3
+
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+RestrictSUIDSGID=true
+
+[Install]
+WantedBy=multi-user.target
