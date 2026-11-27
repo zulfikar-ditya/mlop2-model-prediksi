@@ -44,16 +44,16 @@ systemctl enable fraud-api
 systemctl restart fraud-api
 
 SITE=/etc/nginx/sites-available/fraud-api
-if [[ ! -f "$SITE" ]]; then
+if [[ ! -f "$SITE" ]] || ! grep -q "listen 443" "$SITE"; then
   sed "s/__DOMAIN__/$DOMAIN/" "$SRC_DIR/nginx.conf" > "$SITE"
-  ln -sf "$SITE" /etc/nginx/sites-enabled/fraud-api
-  rm -f /etc/nginx/sites-enabled/default
 fi
+ln -sf "$SITE" /etc/nginx/sites-enabled/fraud-api
+rm -f /etc/nginx/sites-enabled/default
 nginx -t
 systemctl reload nginx
 
 if [[ -n "$EMAIL" ]] && ! grep -q "listen 443" "$SITE"; then
-  certbot --nginx -d "$DOMAIN" --redirect --agree-tos -m "$EMAIL" -n
+  certbot --nginx -d "$DOMAIN" --redirect --agree-tos -m "$EMAIL" -n --reinstall
 fi
 
 for _ in {1..20}; do
